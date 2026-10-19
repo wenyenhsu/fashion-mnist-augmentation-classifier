@@ -1,0 +1,37 @@
+__pycache__/
+*.pyc
+.env
+.env.production
+.venv/
+staticfiles/
+media/
+.pytest_cache/
+.coverage
+celerybeat-schedule*
+
+# IDE / OS
+.idea/
+*.iml
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Local DB / logs
+db.sqlite3
+src/db.sqlite3
+*.log
+*.drawio
+*.mmd
+db-schema.md
+.drawio.bkp
+
+# Local compose overrides
+docker-compose.override.yml
+
+# Google Drive service account
+google-drive-service-account.json
+*service-account*.json
+
+# Assistant personal preferences (project_/feedback_/reference_ stay in git)
+memory/user_*.md
+
