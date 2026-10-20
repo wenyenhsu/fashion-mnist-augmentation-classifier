@@ -35,3 +35,6 @@ google-drive-service-account.json
 # Assistant personal preferences (project_/feedback_/reference_ stay in git)
 memory/user_*.md
 
+
+# Local dataset
+/data/
