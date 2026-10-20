@@ -52,3 +52,68 @@ def train_one_epoch(
         total_correct / total_examples,
         total_examples,
     )
+
+
+@torch.no_grad()
+def evaluate(
+    model: nn.Module,
+    dataloader: DataLoader,
+    criterion: nn.Module,
+    device: torch.device,
+) -> tuple[float, float, list[tuple[str | int, int, int]]]:
+    """Return sample-weighted loss, accuracy, and actual prediction records.
+
+    Each batch must contain (images, labels, sample_ids). The criterion must
+    return a batch-mean loss. Prediction records contain
+    (sample_id, true_label, predicted_label), preserving the loader's order
+    and repeated IDs. Accuracy is a fraction between zero and one.
+    An empty loader or missing/mismatched sample IDs raises ValueError.
+    """
+    model.eval()
+    total_loss = 0.0
+    total_correct = 0
+    total_examples = 0
+    predictions: list[tuple[str | int, int, int]] = []
+
+    for batch in dataloader:
+        if len(batch) != 3:
+            raise ValueError(
+                "Evaluation batches must contain (images, labels, sample_ids)."
+            )
+        images, labels, sample_ids = batch
+        images = images.to(device)
+        labels = labels.to(device)
+        batch_size = labels.size(0)
+
+        # Preserve supplied IDs instead of deriving them from batch positions.
+        if isinstance(sample_ids, torch.Tensor):
+            actual_ids = sample_ids.detach().cpu().tolist()
+        else:
+            actual_ids = list(sample_ids)
+        if len(actual_ids) != batch_size:
+            raise ValueError("Sample ID count must match the batch size.")
+
+        logits = model(images)
+        loss = criterion(logits, labels)
+        predicted_labels = logits.argmax(dim=1)
+
+        # Include every evaluated example, even in the final partial batch.
+        total_loss += loss.item() * batch_size
+        total_correct += (predicted_labels == labels).sum().item()
+        total_examples += batch_size
+        predictions.extend(
+            zip(
+                actual_ids,
+                labels.detach().cpu().tolist(),
+                predicted_labels.detach().cpu().tolist(),
+            )
+        )
+
+    if total_examples == 0:
+        raise ValueError("Cannot evaluate an empty dataloader.")
+
+    return (
+        total_loss / total_examples,
+        total_correct / total_examples,
+        predictions,
+    )
